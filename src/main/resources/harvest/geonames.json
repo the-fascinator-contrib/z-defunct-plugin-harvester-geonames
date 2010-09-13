@@ -1,0 +1,19 @@
+{
+    "harvester": {
+        "type": "geonames",
+        "geonames": {
+            "countryInfo": "${fascinator.home}/geonames/countryInfo.txt",
+            "baseFile": "${fascinator.home}/geonames/allCountries.txt"
+        }
+    },
+    "indexer": {
+        "script": {
+            "type": "python",
+            "rules": "geonames.py"
+        },
+        "params": {
+            "repository.name": "Geonames",
+            "repository.type": "Geonames"
+        }
+    }
+}

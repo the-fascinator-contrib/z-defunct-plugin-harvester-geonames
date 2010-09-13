@@ -1,0 +1,9 @@
+{
+    "harvester": {
+        "type": "geonames",
+        "geonames": {
+            "countryInfo": "${test.dir}/countryInfo-smaller.txt",
+            "baseFile": "${test.dir}/AD.txt"
+        }
+    }
+}
