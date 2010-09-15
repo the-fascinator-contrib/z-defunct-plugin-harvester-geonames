@@ -20,6 +20,7 @@ package au.edu.usq.fascinator.harvester.geonames;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
@@ -61,17 +62,17 @@ public class GeonamesHarvester extends GenericHarvester {
     private Logger log = LoggerFactory.getLogger(GeonamesHarvester.class);
 
     /**
-     * List of country code and names
+     * List of header
      */
-    private Map<String, String> countryInfoMap;
+    private Map<Integer, String> header;
 
     /**
      * File consists of the country codes and country names
      */
     private File countryInfoFile;
 
-    /** File consists of geoname to be harvested */
-    private File geonameFile;
+    /** Folder consists of countries to be harvested */
+    private File countryFolder;
 
     /**
      * Skos harvester constructor
@@ -103,52 +104,13 @@ public class GeonamesHarvester extends GenericHarvester {
                 throw new HarvesterException("Error getting file URI");
             }
         }
-        String baseFile = config.get("harvester/geonames/baseFile", "");
-        if (baseFile != "") {
-            geonameFile = new File(baseFile);
+        String countryFolderName = config.get(
+                "harvester/geonames/countryFolder", "");
+        if (countryFolderName != "") {
+            countryFolder = new File(countryFolderName);
         } else {
-            throw new HarvesterException("No Geoname file specified");
+            throw new HarvesterException("Geoname folder is not specified");
         }
-        log.info("setupCountryCode");
-        setUpCountryCode();
-    }
-
-    /**
-     * Setting country code map to be used for harvesting
-     * 
-     * @throws HarvesterException
-     */
-    private void setUpCountryCode() throws HarvesterException {
-        countryInfoMap = new HashMap<String, String>();
-        try {
-            BufferedReader input = new BufferedReader(new FileReader(
-                    countryInfoFile));
-            String line = null;
-            try {
-                Boolean process = false;
-                while ((line = input.readLine()) != null) {
-                    if (process) {
-                        String splitArray[] = line.split("\t");
-                        // Just process the ISO and Country Name
-                        countryInfoMap.put(splitArray[0], splitArray[4]);
-                    }
-                    if (line.startsWith("#ISO\t")) {
-                        process = true;
-                    }
-                }
-            } finally {
-                input.close();
-            }
-        } catch (FileNotFoundException e) {
-            throw new HarvesterException("Fail to read file:"
-                    + countryInfoFile.getName());
-        } catch (IOException e) {
-            throw new HarvesterException("Fail to close input reader");
-        }
-    }
-
-    public Map<String, String> getCountryCode() {
-        return countryInfoMap;
     }
 
     /**
@@ -160,20 +122,27 @@ public class GeonamesHarvester extends GenericHarvester {
     @Override
     public Set<String> getObjectIdList() throws HarvesterException {
         Set<String> geonamesObjectIdList = new HashSet<String>();
+
         try {
             BufferedReader input = new BufferedReader(new FileReader(
-                    geonameFile));
+                    countryInfoFile));
             String line = null;
             try {
+                Boolean process = false;
                 while ((line = input.readLine()) != null) {
-                    String splitArray[] = line.split("\t");
-                    String objectId = createGeonameObject(splitArray);
-                    if (objectId != null)
-                        geonamesObjectIdList.add(objectId);
+                    if (process) {
+                        String splitArray[] = line.split("\t");
+                        String objectId = createGeonameObject(splitArray);
+                        if (objectId != null)
+                            geonamesObjectIdList.add(objectId);
+                    }
+                    if (line.startsWith("#ISO\t")) {
+                        setHeader(line);
+                        process = true;
+                    }
                 }
             } catch (StorageException e) {
-                throw new HarvesterException("Fail to create object: "
-                        + e.getMessage());
+                throw new HarvesterException("Fail to create new object");
             } finally {
                 input.close();
             }
@@ -181,16 +150,46 @@ public class GeonamesHarvester extends GenericHarvester {
             throw new HarvesterException("Fail to read file:"
                     + countryInfoFile.getName());
         } catch (IOException e) {
-            throw new HarvesterException("Fail to close input reader"
-                    + e.getMessage());
+            throw new HarvesterException("Fail to close input reader");
         }
-        log.info("done");
         return geonamesObjectIdList;
     }
 
+    /**
+     * Check if there is more object
+     * 
+     * @return true of there is more object
+     */
     @Override
     public boolean hasMoreObjects() {
         return false;
+    }
+
+    /** 
+     * Set header list
+     * @param line
+     */
+    private void setHeader(String line) {
+        header = new HashMap();
+        line = line.substring(1, line.length());
+        String lineSplits[] = line.split("\t");
+        int count = 0;
+        for (String lineSplit : lineSplits) {
+            //Hard coded for now
+            if (lineSplit.startsWith("Area"))
+                lineSplit = "AreaInSqKm";
+            lineSplit = lineSplit.trim().replace(" ", "_");
+            header.put(count, lineSplit);
+            count += 1;
+        }
+    }
+
+    /**
+     * Get header list
+     * @return
+     */
+    public Map<Integer, String> getHeader() {
+        return header;
     }
 
     /**
@@ -206,38 +205,59 @@ public class GeonamesHarvester extends GenericHarvester {
     private String createGeonameObject(String[] geonameDetail)
             throws HarvesterException, StorageException, IOException {
 
-        String geonameId = geonameDetail[0];
-        String geonameUrl = "http://geonames.org/" + geonameId;
-        String geonameName = geonameDetail[1];
-        String latitude = geonameDetail[4];
-        String longitude = geonameDetail[5];
-        String country = countryInfoMap.get(geonameDetail[8]);
-
+        String ISOcode = "";
+        String geonameName = "";
+        String geonameUrl = "";
         JsonConfigHelper json = new JsonConfigHelper();
-        json.set("dc_identifier", geonameUrl);
-        json.set("geonameId", geonameId);
-        json.set("country", country);
-        json.set("dc_title", geonameName);
-        json.set("latitude", latitude);
-        json.set("longitude", longitude);
+        log.info("Processing... {}", geonameDetail[0]);
+        for (int count = 0; count < geonameDetail.length; count++) {
+            String headerStr = header.get(count);
+            String geonameDetailValue = geonameDetail[count];
+            json.set(headerStr, geonameDetailValue);
+            if (headerStr.equals("geonameid")) {
+                geonameUrl = "http://geonames.org/" + geonameDetailValue;
+                json.set("dc_identifier", geonameUrl);
+            }
+            if (headerStr.equals("Country")) {
+                geonameName = geonameDetailValue;
+                json.set("dc_title", geonameDetailValue);
+            }
+            if (headerStr.equals("ISO")) {
+                ISOcode = geonameDetailValue;
+            }
+            json.set(headerStr, geonameDetailValue);
+        }
 
-        Storage storage = getStorage();
-        log.info("Creating Geoname object: {}", geonameName);
-        String oid = DigestUtils.md5Hex(geonameUrl);
-        DigitalObject object = StorageUtils.getDigitalObject(storage, oid);
-        String pid = "geonames.json";
+        File fileName = new File(countryFolder, ISOcode + ".txt");
+        if (fileName.exists()) {
+            Storage storage = getStorage();
+            log.info("Creating Geoname object: {} with url: {}", geonameName, geonameUrl);
+            String oid = DigestUtils.md5Hex(geonameUrl);
+            DigitalObject object = StorageUtils.getDigitalObject(storage, oid);
 
-        Payload payload = StorageUtils.createOrUpdatePayload(object, pid,
-                IOUtils.toInputStream(json.toString(), "UTF-8"));
-        payload.setContentType("text/json");
-        payload.close();
+            // Payload to store the country metadata
+            Payload payloadMetadata = StorageUtils.createOrUpdatePayload(object, ISOcode + ".json",
+                    IOUtils.toInputStream(json.toString(), "UTF-8"));
+            payloadMetadata.setContentType("text/json");
+            payloadMetadata.close();
+            
+            // Payload to store the country areas
+            Payload payload = StorageUtils.createOrUpdatePayload(object, ISOcode + ".txt",
+                    new FileInputStream(fileName));
+            payload.setContentType("text/plain");
+            payload.close();
 
-        // update object metadata
-        Properties props = object.getMetadata();
-        props.setProperty("render-pending", "true");
+            // update object metadata
+            Properties props = object.getMetadata();
+            props.setProperty("ISOcode", ISOcode);
+            props.setProperty("countryName", geonameName);
+            props.setProperty("render-pending", "true");
 
-        object.close();
-        return object.getId();
+            object.close();
+            return object.getId();
+        }
+        return null;
+
     }
 
 }
