@@ -3,7 +3,7 @@
         "type": "geonames",
         "geonames": {
             "countryInfo": "${fascinator.home}/geonames/countryInfo.txt",
-            "countryFolder": "${fascinator.home}/geonames/"
+            "countryFolder": "${fascinator.home}/geonames/unzipFolder"
         }
     },
     "indexer": {
