@@ -7,7 +7,7 @@ import zipfile
 countryInfoFile = "countryInfo.txt"
 downloadFolder = "countryZip"
 unzipFolder = "unzipFolder"
-deleteFolder = False
+deleteFolder = True
 
 #check if countryInfo.txt exist if not request user download from http://download.geonames.org/export/dump/countryInfo.txt
 if not os.path.isfile(countryInfoFile):
