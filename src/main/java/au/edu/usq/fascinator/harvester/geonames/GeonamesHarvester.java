@@ -46,13 +46,94 @@ import au.edu.usq.fascinator.common.harvester.impl.GenericHarvester;
 import au.edu.usq.fascinator.common.storage.StorageUtils;
 
 /**
- * Harvests Geonames Server
+ * <h3>Introduction</h3>
  * <p>
- * Configuration options:
- * <ul>
- * <li>countryInfo: country information file</li>
- * <li>baseDir: file to harvest</li>
- * </ul>
+ * This plugin harvests geonames data downloaded from <a
+ * href="http://geonames.org/">geonames server</a>. The plugin requires <a
+ * href="http://download.geonames.org/export/dump/countryInfo.txt"
+ * >countryInfo.txt</a> file to process the areas within the country.
+ * </p>
+ * 
+ * <p>
+ * Download all areas within the country listed in countryInfo.txt (<b>Note:
+ * </b>You need to install python):
+ * </p>
+ * <ol>
+ * <li>mkdir %USER_HOME%/.fascinator/geonames if not exist</li>
+ * <li>Download <a
+ * href="http://download.geonames.org/export/dump/countryInfo.txt"
+ * >countryInfo.txt</a> file to %USER_HOME%/.fascinator/geonames</li>
+ * <li>Download <a href=
+ * "https://fascinator.usq.edu.au/trac/browser/code/the-fascinator2/contrib/fascinator/plugins/harvester/geonames/trunk/src/main/resources/geonames/download-geoserver.py"
+ * >download-geoserver.py</a> file to %USER_HOME%/.fascinator/geonames</li>
+ * <li>Run the script: python download-geoserver.py. NOTE: if there is error in
+ * the middle of the download, and you would like to continue the download
+ * without deleting the downloaded file, open download-geoserver.py file and set
+ * deleteFolder = True</li>
+ * </ol>
+ * 
+ * <h3>Configuration</h3>
+ * <p>
+ * Sample configuration file for Geonames harvester: <a href=
+ * "https://fascinator.usq.edu.au/trac/browser/code/the-fascinator2/contrib/fascinator/plugins/harvester/geonames/trunk/src/main/resources/harvest/geonames.json"
+ * >geonames.json</a>
+ * </p>
+ * 
+ * <table border="1">
+ * <tr>
+ * <th>Option</th>
+ * <th>Description</th>
+ * <th>Required</th>
+ * <th>Default</th>
+ * </tr>
+ * 
+ * <tr>
+ * <td>countryInfo</td>
+ * <td>The location of countryInfo.txt file</td>
+ * <td><b>Yes</b></td>
+ * <td>${fascinator.home}/geonames/countryInfo.txt</td>
+ * </tr>
+ * 
+ * <tr>
+ * <td>countryFolder</td>
+ * <td>The location of country areas file</td>
+ * <td><b>Yes</b></td>
+ * <td>${fascinator.home}/geonames/unzipFolder</td>
+ * </tr>
+ * </table>
+ * 
+ * <h3>Examples</h3>
+ * <ol>
+ * <li>
+ * Harvesting country areas based on country list found in countryInfo.txt file
+ * 
+ * <pre>
+ *   "harvester": {
+ *         "type": "geonames",
+ *         "geonames": {
+ *             "countryInfo": "${fascinator.home}/geonames/countryInfo.txt",
+ *             "countryFolder": "${fascinator.home}/geonames/unzipFolder"
+ *         }
+ *     }
+ * </pre>
+ * 
+ * </li>
+ * </ol>
+ * 
+ * <h3>Rule file</h3>
+ * <p>
+ * Sample rule file for the Geonames harvester: <a href=
+ * "https://fascinator.usq.edu.au/trac/browser/code/the-fascinator2/contrib/fascinator/plugins/harvester/geonames/trunk/src/main/resources/harvest/geonames.py"
+ * >geonames.py</a>
+ * </p>
+ * 
+ * <h3>Wiki Link</h3>
+ * <p>
+ * <a href=
+ * "https://fascinator.usq.edu.au/trac/wiki/Fascinator/Documents/Plugins/Harvester/Geonames"
+ * >https://fascinator.usq.edu.au/trac/wiki/Fascinator/Documents/Plugins/
+ * Harvester/Geonames</a>
+ * </p>
  * 
  * @author Linda Octalina
  */
@@ -165,8 +246,9 @@ public class GeonamesHarvester extends GenericHarvester {
         return false;
     }
 
-    /** 
+    /**
      * Set header list
+     * 
      * @param line
      */
     private void setHeader(String line) {
@@ -186,6 +268,7 @@ public class GeonamesHarvester extends GenericHarvester {
 
     /**
      * Get header list
+     * 
      * @return
      */
     public Map<Integer, String> getHeader() {
@@ -231,19 +314,21 @@ public class GeonamesHarvester extends GenericHarvester {
         File fileName = new File(countryFolder, ISOcode + ".txt");
         if (fileName.exists()) {
             Storage storage = getStorage();
-            log.info("Creating Geoname object: {} with url: {}", geonameName, geonameUrl);
+            log.info("Creating Geoname object: {} with url: {}", geonameName,
+                    geonameUrl);
             String oid = DigestUtils.md5Hex(geonameUrl);
             DigitalObject object = StorageUtils.getDigitalObject(storage, oid);
 
             // Payload to store the country metadata
-            Payload payloadMetadata = StorageUtils.createOrUpdatePayload(object, ISOcode + ".json",
+            Payload payloadMetadata = StorageUtils.createOrUpdatePayload(
+                    object, ISOcode + ".json",
                     IOUtils.toInputStream(json.toString(), "UTF-8"));
             payloadMetadata.setContentType("text/json");
             payloadMetadata.close();
-            
+
             // Payload to store the country areas
-            Payload payload = StorageUtils.createOrUpdatePayload(object, ISOcode + ".txt",
-                    new FileInputStream(fileName));
+            Payload payload = StorageUtils.createOrUpdatePayload(object,
+                    ISOcode + ".txt", new FileInputStream(fileName));
             payload.setContentType("text/plain");
             payload.close();
 

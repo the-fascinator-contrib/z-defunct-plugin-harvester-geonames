@@ -115,11 +115,12 @@ class IndexData:
                 self.utils.add(extraIndex, "repository_name", self.params["repository.name"])
                 self.utils.add(extraIndex, "repository_type", self.params["repository.type"])
                 self.utils.add(extraIndex, "security_filter", "guest")
-            self.utils.add(extraIndex, "dc_title", arraySplit[1])            
+            self.utils.add(extraIndex, "dc_title", arraySplit[1])
             # The rest of the metadata
-            count = 0;
+            count = 0
             for array in arraySplit:
-                self.utils.add(extraIndex, headerList[count], array)
+                if headerList[count] !="alternatenames" and array:
+                    self.utils.add(extraIndex, headerList[count], array)
                 count +=1
                 
             self.indexer.sendIndexToBuffer(oid, extraIndex)
