@@ -46,7 +46,6 @@ import au.edu.usq.fascinator.common.harvester.impl.GenericHarvester;
 import au.edu.usq.fascinator.common.storage.StorageUtils;
 
 /**
- * <h3>Introduction</h3>
  * <p>
  * This plugin harvests geonames data downloaded from <a
  * href="http://geonames.org/">geonames server</a>. The plugin requires <a
