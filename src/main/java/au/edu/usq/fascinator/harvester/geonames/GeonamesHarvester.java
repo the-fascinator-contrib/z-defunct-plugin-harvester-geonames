@@ -18,6 +18,16 @@
  */
 package au.edu.usq.fascinator.harvester.geonames;
 
+import au.edu.usq.fascinator.api.harvester.HarvesterException;
+import au.edu.usq.fascinator.api.storage.DigitalObject;
+import au.edu.usq.fascinator.api.storage.Payload;
+import au.edu.usq.fascinator.api.storage.Storage;
+import au.edu.usq.fascinator.api.storage.StorageException;
+import au.edu.usq.fascinator.common.JsonObject;
+import au.edu.usq.fascinator.common.JsonSimpleConfig;
+import au.edu.usq.fascinator.common.harvester.impl.GenericHarvester;
+import au.edu.usq.fascinator.common.storage.StorageUtils;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -35,15 +45,6 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import au.edu.usq.fascinator.api.harvester.HarvesterException;
-import au.edu.usq.fascinator.api.storage.DigitalObject;
-import au.edu.usq.fascinator.api.storage.Payload;
-import au.edu.usq.fascinator.api.storage.Storage;
-import au.edu.usq.fascinator.api.storage.StorageException;
-import au.edu.usq.fascinator.common.JsonConfigHelper;
-import au.edu.usq.fascinator.common.harvester.impl.GenericHarvester;
-import au.edu.usq.fascinator.common.storage.StorageUtils;
 
 /**
  * <p>
@@ -166,15 +167,15 @@ public class GeonamesHarvester extends GenericHarvester {
      */
     @Override
     public void init() throws HarvesterException {
-        JsonConfigHelper config;
+        JsonSimpleConfig config;
         // Read config
         try {
-            config = new JsonConfigHelper(getJsonConfig().toString());
+            config = new JsonSimpleConfig(getJsonConfig().toString());
         } catch (IOException ex) {
             throw new HarvesterException("Failed reading configuration", ex);
         }
-        String countryFile = config.get("harvester/geonames/countryInfo");
-        if (countryFile != "") {
+        String countryFile = config.getString("", "harvester", "geonames", "countryInfo");
+        if (!countryFile.equals("")) {
             countryInfoFile = new File(countryFile);
         } else {
             try {
@@ -184,9 +185,9 @@ public class GeonamesHarvester extends GenericHarvester {
                 throw new HarvesterException("Error getting file URI");
             }
         }
-        String countryFolderName = config.get(
-                "harvester/geonames/countryFolder", "");
-        if (countryFolderName != "") {
+        String countryFolderName = config.getString("",
+                "harvester", "geonames", "countryFolder");
+        if (!countryFolderName.equals("")) {
             countryFolder = new File(countryFolderName);
         } else {
             throw new HarvesterException("Geoname folder is not specified");
@@ -290,24 +291,24 @@ public class GeonamesHarvester extends GenericHarvester {
         String ISOcode = "";
         String geonameName = "";
         String geonameUrl = "";
-        JsonConfigHelper json = new JsonConfigHelper();
+        JsonObject json = new JsonObject();
         log.info("Processing... {}", geonameDetail[0]);
         for (int count = 0; count < geonameDetail.length; count++) {
             String headerStr = header.get(count);
             String geonameDetailValue = geonameDetail[count];
-            json.set(headerStr, geonameDetailValue);
+            json.put(headerStr, geonameDetailValue);
             if (headerStr.equals("geonameid")) {
                 geonameUrl = "http://geonames.org/" + geonameDetailValue;
-                json.set("dc_identifier", geonameUrl);
+                json.put("dc_identifier", geonameUrl);
             }
             if (headerStr.equals("Country")) {
                 geonameName = geonameDetailValue;
-                json.set("dc_title", geonameDetailValue);
+                json.put("dc_title", geonameDetailValue);
             }
             if (headerStr.equals("ISO")) {
                 ISOcode = geonameDetailValue;
             }
-            json.set(headerStr, geonameDetailValue);
+            json.put(headerStr, geonameDetailValue);
         }
 
         File fileName = new File(countryFolder, ISOcode + ".txt");

@@ -13,26 +13,29 @@
         <groupId>au.edu.usq.fascinator</groupId>
         <version>0.5.1-SNAPSHOT</version>
     </parent>
+    <properties>
+        <fascinator.version>0.7.6-SNAPSHOT</fascinator.version>
+    </properties>
     <dependencies>
         <dependency>
             <groupId>au.edu.usq.fascinator</groupId>
             <artifactId>fascinator-common</artifactId>
-            <version>0.7.0-SNAPSHOT</version>
+            <version>${fascinator.version}</version>
         </dependency>
         <dependency>
             <groupId>au.edu.usq.fascinator</groupId>
             <artifactId>fascinator-plugin-api</artifactId>
-            <version>0.7.0-SNAPSHOT</version>
+            <version>${fascinator.version}</version>
         </dependency>
         <dependency>
             <groupId>au.edu.usq.fascinator</groupId>
             <artifactId>fascinator-vocabulary</artifactId>
-            <version>0.7.0-SNAPSHOT</version>
+            <version>${fascinator.version}</version>
         </dependency>
         <dependency>
             <groupId>au.edu.usq.fascinator.plugins</groupId>
             <artifactId>plugin-storage-ram</artifactId>
-            <version>0.7.0-SNAPSHOT</version>
+            <version>${fascinator.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -41,10 +44,6 @@
             <version>4.6</version>
             <scope>test</scope>
         </dependency>
-        <!-- <dependency> <groupId>com.hp.hpl.jena</groupId> <artifactId>jena</artifactId> 
-            <version>2.6.3</version> <type>jar</type> <scope>compile</scope> <exclusions> 
-            <exclusion> <groupId>org.slf4j</groupId> <artifactId>slf4j-log4j12</artifactId> 
-            </exclusion> </exclusions> </dependency> -->
     </dependencies>
 </project>
  

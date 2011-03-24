@@ -32,7 +32,6 @@ import org.slf4j.LoggerFactory;
 import au.edu.usq.fascinator.api.PluginManager;
 import au.edu.usq.fascinator.api.harvester.Harvester;
 import au.edu.usq.fascinator.api.storage.Storage;
-import au.edu.usq.fascinator.harvester.geonames.GeonamesHarvester;
 
 /**
  * Unit tests for the Geonames harvester plugin
